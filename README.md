@@ -41,10 +41,10 @@ Should output something like:
    multiply(2, 3) = 6
 ```
 
-`src/operations/operations.c` defines a local function, `some_local_function`. Let's see if it's present in the ABI:
+`src/operations/operations.c` defines the local function `some_local_function`. Let's see if it's present in the ABI:
 
 ```
-$ $ objdump -t ./dist/lib/liboperations.so
+$ objdump -t ./dist/lib/liboperations.so
 
 ./dist/lib/liboperations.so:     file format elf64-x86-64
 
