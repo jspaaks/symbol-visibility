@@ -1,0 +1,25 @@
+cmake_minimum_required(VERSION 3.23...3.28 FATAL_ERROR)
+
+project(project LANGUAGES C)
+
+include(GNUInstallDirs)
+
+set(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
+
+if (APPLE)
+    list(APPEND CMAKE_INSTALL_RPATH @loader_path/../lib)
+elseif(UNIX)
+    list(APPEND CMAKE_INSTALL_RPATH $ORIGIN/../lib)
+endif()
+
+if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug)
+endif()
+
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    set_property(CACHE CMAKE_INSTALL_PREFIX PROPERTY VALUE "${CMAKE_BINARY_DIR}/dist")
+endif()
+
+add_subdirectory(src/calculator)
+add_subdirectory(src/operations)
+
