@@ -44,7 +44,6 @@ Should output something like:
 `src/operations/operations.c` defines a local function, `some_local_function`. Let's see if it's present in the ABI:
 
 ```
-$ cmake --fresh .. && cmake --build . && cmake --install .
 $ $ objdump -t ./dist/lib/liboperations.so
 
 ./dist/lib/liboperations.so:     file format elf64-x86-64
