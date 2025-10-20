@@ -41,46 +41,64 @@ Should output something like:
    multiply(2, 3) = 6
 ```
 
-`src/operations/operations.c` defines a local function, `some_local_function`. Let's see if it's present in the ABI:
+The directory `src/operations/` contains two functions that shouldn't be part of the ABI:
 
+   1. `static_plus_five`, a static function defined in `src/operations/divide.c`, whose scope is limited to the compilation unit `src/operations/divide.c`.
+   2. `nonstatic_plus_three`, a nonstatic function defined in `src/operations/helpers.c`, that is local to the liboperations library.
+
+If we momentarily comment out the "visibility" lines in `src/operations/CMakeLists.txt`
+
+```cmake
+#set_property(TARGET tgt_lib_operations PROPERTY C_VISIBILITY_PRESET hidden)
+...
+#set_property(TARGET tgt_lib_operations PROPERTY VISIBILITY_INLINES_HIDDEN YES)
 ```
+
+Let's see what get included in the ABI when compiling on Linux with GCC:
+
+```console
 $ cmake --fresh .. && cmake --build . && cmake --install .
-$ $ objdump -t ./dist/lib/liboperations.so
+$ # grep ' F ' shows functions only for brevity:
+$ objdump --syms ./dist/lib/liboperations.so | grep ' F '
+0000000000001060 l     F .text  0000000000000000 deregister_tm_clones
+0000000000001090 l     F .text  0000000000000000 register_tm_clones
+00000000000010d0 l     F .text  0000000000000000 __do_global_dtors_aux
+0000000000001110 l     F .text  0000000000000000 frame_dummy
+0000000000001156 l     F .text  0000000000000013 staticfun_plus_five
+0000000000001000 l     F .init  0000000000000000 _init
+00000000000011a8 l     F .fini  0000000000000000 _fini
+0000000000001169 g     F .text  0000000000000013 nonstaticfun_plus_three
+0000000000001119 g     F .text  000000000000003d operations_divide
+000000000000117c g     F .text  000000000000002b operations_multiply
+```
 
-./dist/lib/liboperations.so:     file format elf64-x86-64
+From that, `staticfun_plus_five` is correctly listed as a local (`l`) function (`F`), while `nonstaticfun_plus_three`, `operations_multiply`, and `operations_divide` are listed as global (`g`) functions (`F`), despite `nonstaticfun_plus_three` not being part of the API in `./dist/include`.
 
-SYMBOL TABLE:
-0000000000000000 l    df *ABS*  0000000000000000 crtstuff.c
+Now let's repeat without commenting out the visibility lines in `src/operations/CMakeLists.txt`:
+
+```cmake
+set_property(TARGET tgt_lib_operations PROPERTY C_VISIBILITY_PRESET hidden)
+...
+set_property(TARGET tgt_lib_operations PROPERTY VISIBILITY_INLINES_HIDDEN YES)
+```
+
+```console
+$ cmake --fresh .. && cmake --build . && cmake --install .
+$ # grep ' F ' shows functions only for brevity:
+$ objdump --syms ./dist/lib/liboperations.so | grep ' F '
 0000000000001040 l     F .text  0000000000000000 deregister_tm_clones
 0000000000001070 l     F .text  0000000000000000 register_tm_clones
 00000000000010b0 l     F .text  0000000000000000 __do_global_dtors_aux
-0000000000004008 l     O .bss   0000000000000001 completed.0
-0000000000003e50 l     O .fini_array    0000000000000000 __do_global_dtors_aux_fini_array_entry
 00000000000010f0 l     F .text  0000000000000000 frame_dummy
-0000000000003e48 l     O .init_array    0000000000000000 __frame_dummy_init_array_entry
-0000000000000000 l    df *ABS*  0000000000000000 division.c
-0000000000000000 l    df *ABS*  0000000000000000 multiplication.c
-0000000000000000 l    df *ABS*  0000000000000000 crtstuff.c
-00000000000020f0 l     O .eh_frame      0000000000000000 __FRAME_END__
-0000000000000000 l    df *ABS*  0000000000000000 
-0000000000003e58 l     O .dynamic       0000000000000000 _DYNAMIC
-0000000000004008 l     O .data  0000000000000000 __TMC_END__
-0000000000004000 l     O .data  0000000000000000 __dso_handle
+0000000000001136 l     F .text  0000000000000013 staticfun_plus_five
 0000000000001000 l     F .init  0000000000000000 _init
-0000000000002000 l       .eh_frame_hdr  0000000000000000 __GNU_EH_FRAME_HDR
-00000000000010f9 l     F .text  0000000000000013 some_local_function
-000000000000113c l     F .fini  0000000000000000 _fini
-0000000000003fe8 l     O .got.plt       0000000000000000 _GLOBAL_OFFSET_TABLE_
-0000000000000000  w      *UND*  0000000000000000 __cxa_finalize
-000000000000110c g     F .text  0000000000000017 operations_divide
-0000000000000000  w      *UND*  0000000000000000 _ITM_registerTMCloneTable
-0000000000001123 g     F .text  0000000000000017 operations_multiply
-0000000000000000  w      *UND*  0000000000000000 _ITM_deregisterTMCloneTable
-0000000000000000  w      *UND*  0000000000000000 __gmon_start__
+0000000000001149 l     F .text  0000000000000013 nonstaticfun_plus_three
+0000000000001188 l     F .fini  0000000000000000 _fini
+00000000000010f9 g     F .text  000000000000003d operations_divide
+000000000000115c g     F .text  000000000000002b operations_multiply
 ```
 
-From that, `operations_multiply` and `operations_divide` are global (`g`) functions (`F`), whereas
-`some_local_function` is a local (`l`) function (`F`).
+Now `staticfun_plus_five` and `nonstaticfun_plus_three` are correctly listed as local (`l`) functions (`F`), and `operations_multiply`, and `operations_divide` are correctly listed as global (`g`) functions (`F`), which is consistent with the API in `./dist/include`.
 
 ## Acknowledgements
 

@@ -1,29 +1,13 @@
 add_library(tgt_lib_operations SHARED)
 
-include(GenerateExportHeader)
+set_property(TARGET tgt_lib_operations PROPERTY C_VISIBILITY_PRESET hidden)
+set_property(TARGET tgt_lib_operations PROPERTY OUTPUT_NAME operations)
+set_property(TARGET tgt_lib_operations PROPERTY VISIBILITY_INLINES_HIDDEN YES)
+
 generate_export_header(
     tgt_lib_operations
     BASE_NAME operations
     EXPORT_FILE_NAME ${CMAKE_BINARY_DIR}/include/operations/export.h
-)
-
-set_property(
-    TARGET
-        tgt_lib_operations
-    PROPERTY
-        C_VISIBILITY_PRESET hidden
-)
-set_property(
-    TARGET
-        tgt_lib_operations
-    PROPERTY
-        OUTPUT_NAME operations
-)
-set_property(
-    TARGET
-        tgt_lib_operations
-    PROPERTY
-        VISIBILITY_INLINES_HIDDEN YES
 )
 
 target_compile_definitions(
@@ -60,6 +44,7 @@ target_sources(
     tgt_lib_operations
     PRIVATE
         division.c
+        helpers.c
         multiplication.c
     PUBLIC
         FILE_SET fset_lib_operations_headers
