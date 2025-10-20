@@ -54,10 +54,15 @@ If we momentarily comment out the "visibility" lines in `src/operations/CMakeLis
 #set_property(TARGET tgt_lib_operations PROPERTY VISIBILITY_INLINES_HIDDEN YES)
 ```
 
-Let's see what get included in the ABI when compiling on Linux with GCC:
+Configure, build and install:
 
 ```console
 $ cmake --fresh .. && cmake --build . && cmake --install .
+```
+
+Let's see what gets included in the ABI (when compiling on Linux with GCC):
+
+```console
 $ # grep ' F ' shows functions only for brevity:
 $ objdump --syms ./dist/lib/liboperations.so | grep ' F '
 0000000000001060 l     F .text  0000000000000000 deregister_tm_clones
@@ -74,7 +79,17 @@ $ objdump --syms ./dist/lib/liboperations.so | grep ' F '
 
 From that, `staticfun_plus_five` is correctly listed as a local (`l`) function (`F`), while `nonstaticfun_plus_three`, `operations_multiply`, and `operations_divide` are listed as global (`g`) functions (`F`), despite `nonstaticfun_plus_three` not being part of the API in `./dist/include`.
 
-Now let's repeat without commenting out the visibility lines in `src/operations/CMakeLists.txt`:
+This implies that you can now (incorrectly) do something like:
+
+```console
+$ python3
+>>> import ctypes
+>>> liboperations = ctypes.CDLL('<path to library>')
+>>> liboperations.nonstaticfun_plus_three(7)
+10
+```
+
+So let's correct that by recompiling without commenting out the visibility lines in `src/operations/CMakeLists.txt`:
 
 ```cmake
 set_property(TARGET tgt_lib_operations PROPERTY C_VISIBILITY_PRESET hidden)
@@ -82,8 +97,15 @@ set_property(TARGET tgt_lib_operations PROPERTY C_VISIBILITY_PRESET hidden)
 set_property(TARGET tgt_lib_operations PROPERTY VISIBILITY_INLINES_HIDDEN YES)
 ```
 
+Configure, build and install:
+
 ```console
 $ cmake --fresh .. && cmake --build . && cmake --install .
+```
+
+Let's see if that made a difference:
+
+```console
 $ # grep ' F ' shows functions only for brevity:
 $ objdump --syms ./dist/lib/liboperations.so | grep ' F '
 0000000000001040 l     F .text  0000000000000000 deregister_tm_clones
