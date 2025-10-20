@@ -120,7 +120,7 @@ $ objdump --syms ./dist/lib/liboperations.so | grep ' F '
 000000000000115c g     F .text  000000000000002b operations_multiply
 ```
 
-Now `staticfun_plus_five` and `nonstaticfun_plus_three` are correctly listed as local (`l`) functions (`F`), and `operations_multiply`, and `operations_divide` are correctly listed as global (`g`) functions (`F`), which is consistent with the API in `./dist/include`.
+Now `staticfun_plus_five` and `nonstaticfun_plus_three` are correctly listed as local (`l`) functions (`F`), while `operations_multiply` and `operations_divide` are correctly listed as global (`g`) functions (`F`), which is consistent with the API in `./dist/include`.
 
 ## Acknowledgements
 
